@@ -63,7 +63,7 @@ class Waveform
     #   :seconds_color => Hex code of the color of seconds marks.
     #     Default is #dd0000 (red).
     #
-    #   :seconds => if true print seconds marks.
+    #   :print_seconds => if true print seconds marks.
     #     Default is false.
     #
     #   :force => Force generation of waveform, overwriting WAV or PNG file.
@@ -92,7 +92,8 @@ class Waveform
       # frames are very wide (i.e. the image width is very small) -- I *think*
       # the larger the frames are, the more "peaky" the waveform should get,
       # perhaps to the point of inaccurately reflecting the actual sound.
-      samples = frames(source, options[:width], options[:method]).collect do |frame|
+      samples, samples_per_second = *frames(source, options[:width], options[:method])
+      samples.collect! do |frame|
         frame.inject(0.0) { |sum, peak| sum + peak } / frame.size
       end
       
@@ -104,7 +105,7 @@ class Waveform
           File.unlink(filename)
         end
         
-        image = draw samples, options
+        image = draw samples, options, samples_per_second
         image.save filename
       end
       
@@ -120,10 +121,13 @@ class Waveform
       raise ArgumentError.new("Unknown sampling method #{method}") unless [ :peak, :rms ].include?(method)
       
       frames = []
+      frames_per_second = 0.0
 
       RubyAudio::Sound.open(source) do |audio|
         frames_read = 0
-        frames_per_sample = (audio.info.frames.to_f / width.to_f).to_i
+        frames_per_sample = (audio.info.frames.to_f / width.to_f)
+        frames_per_second = (audio.info.samplerate.to_f / frames_per_sample).to_i
+        frames_per_sample = frames_per_sample.to_i
         sample = RubyAudio::Buffer.new("float", frames_per_sample, audio.info.channels)
 
         @log.timed("Sampling #{frames_per_sample} frames per sample: ") do
@@ -134,14 +138,14 @@ class Waveform
         end
       end
       
-      frames
+      return frames, frames_per_second
     rescue RubyAudio::Error => e
       raise e unless e.message == "File contains data in an unknown format."
       raise Waveform::RuntimeError.new("Source audio file #{source} could not be read by RubyAudio library -- Hint: non-WAV files are no longer supported, convert to WAV first using something like ffmpeg (RubyAudio: #{e.message})")
     end
     
     # Draws the given samples using the given options, returns a ChunkyPNG::Image.
-    def draw(samples, options)      
+    def draw(samples, options, samples_per_second = 0)
       image = ChunkyPNG::Image.new(options[:width], options[:height],
         options[:background_color] == :transparent ? ChunkyPNG::Color::TRANSPARENT : options[:background_color]
       )
@@ -157,16 +161,31 @@ class Waveform
         color = ChunkyPNG::Color.from_hex(options[:color])
       end
 
+      options[:print_seconds] &&= samples_per_second >= 1.0
+      if options[:print_seconds]
+        sec_color = if options[:seconds_color] == :transparent 
+          ChunkyPNG::Color::TRANSPARENT
+        else
+          ChunkyPNG::Color.from_hex(options[:seconds_color])
+        end
+      end
+
       # Calling "zero" the middle of the waveform, like there's positive and
       # negative amplitude
-      zero = options[:height] / 2.0
+      height = options[:height]
+      zero = height / 2.0
     
       samples.each_with_index do |sample, x|
         # Half the amplitude goes above zero, half below
-        amplitude = sample * options[:height].to_f / 2.0
+        amplitude = sample * (height / 2.0)
         # If you give ChunkyPNG floats for pixel positions all sorts of things
         # go haywire.
         image.line(x, (zero - amplitude).round, x, (zero + amplitude).round, color)
+
+        # print seconds
+        if options[:print_seconds] && ((x + 1) % samples_per_second) == 0
+          image.line(x, 0, x, height.round, sec_color)
+        end
       end
       
       # Simple transparency masking, it just loops over every pixel and makes
