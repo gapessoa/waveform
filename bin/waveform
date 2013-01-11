@@ -45,9 +45,9 @@ optparse = OptionParser.new do |o|
     options[:seconds_color] = parse_color(color)
   end
 
-  options[:seconds] = false
+  options[:print_seconds] = false
   o.on("-s", "--secs", "Print seconds mark") do
-    options[:seconds] = true
+    options[:print_seconds] = true
   end
 
   options[:force] = false
