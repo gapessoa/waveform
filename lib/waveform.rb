@@ -14,6 +14,8 @@ class Waveform
     :height => 280,
     :background_color => "#666666",
     :color => "#00ccff",
+    :print_seconds => false,
+    :seconds_color => "#dd0000",
     :force => false,
     :logger => nil
   }
@@ -57,6 +59,12 @@ class Waveform
     #     :transparent to render the waveform transparent (use w/ a solid
     #     color background to achieve a "cutout" effect).
     #     Default is #00ccff (cyan-ish).
+    #
+    #   :seconds_color => Hex code of the color of seconds marks.
+    #     Default is #dd0000 (red).
+    #
+    #   :seconds => if true print seconds marks.
+    #     Default is false.
     #
     #   :force => Force generation of waveform, overwriting WAV or PNG file.
     # 

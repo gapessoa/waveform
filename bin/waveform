@@ -2,6 +2,15 @@
 require "waveform"
 require "optparse"
 
+# Parse color string
+def parse_color color
+  if color == "transparent"
+    :transparent
+  else
+    color.match(/#.*/) ? color : "##{color}"
+  end
+end
+
 options = Waveform::DefaultOptions
 optparse = OptionParser.new do |o|
   o.banner = "Usage: waveform [options] source_audio [ouput.png]"
@@ -16,19 +25,11 @@ optparse = OptionParser.new do |o|
   end
 
   o.on("-c", "--color COLOR", "Color (hex code) to draw the waveform. Can also pass 'transparent' to cut it out of the background -- Default #{Waveform::DefaultOptions[:color]}.") do |color|
-    if color == "transparent"
-      options[:color] = :transparent
-    else
-      options[:color] = color.match(/#.*/) ? color : "##{color}"
-    end
+    options[:color] = parse_color(color)
   end
 
   o.on("-b", "--background COLOR", "Background color (hex code) to draw waveform on -- Default #{Waveform::DefaultOptions[:background_color]}.") do |color|
-    if color == "transparent"
-      options[:background_color] = :transparent
-    else
-      options[:background_color] = color.match(/#.*/) ? color : "##{color}"
-    end
+    options[:background_color] = parse_color(color)
   end
 
   o.on("-m", "--method METHOD", "Wave analyzation method (can be 'peak' or 'rms') -- Default '#{Waveform::DefaultOptions[:method]}'.") do |method|
@@ -38,6 +39,15 @@ optparse = OptionParser.new do |o|
   options[:logger] = $stdout
   o.on("-q", "--quiet", "Don't print anything out when generating waveform") do
     options[:logger] = nil
+  end
+
+  o.on("-d", "--seconds-color COLOR", "Seconds mark color -- Default '#{Waveform::DefaultOptions[:seconds_color]}'.") do |color|
+    options[:seconds_color] = parse_color(color)
+  end
+
+  options[:seconds] = false
+  o.on("-s", "--secs", "Print seconds mark") do
+    options[:seconds] = true
   end
 
   options[:force] = false
