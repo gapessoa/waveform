@@ -9,16 +9,18 @@ end
 
 class Waveform
   DefaultOptions = {
-    :method => :peak,
-    :width => 1800,
-    :height => 280,
+    :method           => :peak,
+    :width            => 1800,
+    :height           => 280,
     :background_color => "#666666",
-    :color => "#00ccff",
-    :print_seconds => false,
-    :time => 1.0,
-    :seconds_color => "#dd0000",
-    :force => false,
-    :logger => nil
+    :color            => "#00ccff",
+    :print_seconds    => false,
+    :time             => 1.0,
+    :seconds_color    => "#dd0000",
+    :force            => false,
+    :logger           => nil,
+    :print_data       => false,
+    :data_file        => ''
   }
   
   TransparencyMask = "#00ff00"
@@ -175,6 +177,10 @@ class Waveform
       # negative amplitude
       height = options[:height]
       zero = height / 2.0
+
+      if options[:print_data]
+        file = File.open(options[:data_file], 'w')
+      end
     
       samples.each_with_index do |sample, x|
         # Half the amplitude goes above zero, half below
@@ -187,7 +193,11 @@ class Waveform
         if options[:print_seconds] && ((x + 1) % samples_per_second) == 0
           image.line(x, 0, x, height.round, sec_color)
         end
+
+        file.write "#{sample}\n" if options[:print_data]
       end
+
+      file.close
       
       # Simple transparency masking, it just loops over every pixel and makes
       # ones which match the transparency mask color completely clear.

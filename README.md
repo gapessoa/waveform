@@ -36,6 +36,7 @@ There are some nifty options you can supply to switch things up:
         cooler, but 'rms' is closer to what you actually hear.
     -s [TIME] print seconds mark. (Default: false).
     -d set second mark color (Default: #ff0000).
+    -p print values used to draw into a file.
 
 There are also some less-nifty options:
 
