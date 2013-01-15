@@ -34,7 +34,7 @@ There are some nifty options you can supply to switch things up:
     -m sets the method used to sample the source audio file, it can either be
         'peak' or 'rms'. 'peak' is probably what you want because it looks
         cooler, but 'rms' is closer to what you actually hear.
-    -s print seconds mark (Default: false).
+    -s [TIME] print seconds mark. (Default: false).
     -d set second mark color (Default: #ff0000).
 
 There are also some less-nifty options:

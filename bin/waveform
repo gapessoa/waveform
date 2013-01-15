@@ -46,8 +46,9 @@ optparse = OptionParser.new do |o|
   end
 
   options[:print_seconds] = false
-  o.on("-s", "--secs", "Print seconds mark") do
+  o.on("-s", "--secs [TIME]", "Print seconds mark. If time not defined the time range will be 1 second.") do |time|
     options[:print_seconds] = true
+    options[:time] = (time || 1.0).to_f # one second by default
   end
 
   options[:force] = false

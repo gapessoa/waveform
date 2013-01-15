@@ -15,6 +15,7 @@ class Waveform
     :background_color => "#666666",
     :color => "#00ccff",
     :print_seconds => false,
+    :time => 1.0,
     :seconds_color => "#dd0000",
     :force => false,
     :logger => nil
@@ -76,14 +77,14 @@ class Waveform
     #   Waveform.generate("Kickstart My Heart.wav", "Kickstart My Heart.png", :color => "#ff00ff", :logger => $stdout)
     #
     def generate(source, filename, options={})
-      options = DefaultOptions.merge(options)
+      @options = DefaultOptions.merge(options)
       
       raise ArgumentError.new("No source audio filename given, must be an existing sound file.") unless source
       raise ArgumentError.new("No destination filename given for waveform") unless filename
       raise RuntimeError.new("Source audio file '#{source}' not found.") unless File.exist?(source)
       raise RuntimeError.new("Destination file #{filename} exists. Use --force if you want to automatically remove it.") if File.exists?(filename) && !options[:force] === true
 
-      @log = Log.new(options[:logger])
+      @log = Log.new(@options[:logger])
       @log.start!
       
       # Frames gives the amplitudes for each channel, for our waveform we're
@@ -92,7 +93,7 @@ class Waveform
       # frames are very wide (i.e. the image width is very small) -- I *think*
       # the larger the frames are, the more "peaky" the waveform should get,
       # perhaps to the point of inaccurately reflecting the actual sound.
-      samples, samples_per_second = *frames(source, options[:width], options[:method])
+      samples, samples_per_second = *frames(source, @options[:width], @options[:method])
       samples.collect! do |frame|
         frame.inject(0.0) { |sum, peak| sum + peak } / frame.size
       end
@@ -100,12 +101,12 @@ class Waveform
       @log.timed("\nDrawing...") do
         # Don't remove the file even if force is true until we're sure the
         # source was readable
-        if File.exists?(filename) && options[:force] === true
+        if File.exists?(filename) && @options[:force] === true
           @log.out("Output file #{filename} encountered. Removing.")
           File.unlink(filename)
         end
         
-        image = draw samples, options, samples_per_second
+        image = draw samples, @options, samples_per_second
         image.save filename
       end
       
@@ -126,7 +127,7 @@ class Waveform
       RubyAudio::Sound.open(source) do |audio|
         frames_read = 0
         frames_per_sample = (audio.info.frames.to_f / width.to_f)
-        frames_per_second = (audio.info.samplerate.to_f / frames_per_sample).to_i
+        frames_per_second = (@options[:time] * audio.info.samplerate.to_f / frames_per_sample).to_i
         frames_per_sample = frames_per_sample.to_i
         sample = RubyAudio::Buffer.new("float", frames_per_sample, audio.info.channels)
 
