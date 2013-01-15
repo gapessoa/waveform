@@ -108,11 +108,16 @@ class Waveform
           File.unlink(filename)
         end
         
+        if @options[:print_data]
+          @log.out("\nPrinting data file.")
+          print_data samples
+        end
+        
         image = draw samples, @options, samples_per_second
         image.save filename
       end
       
-      @log.done!("Generated waveform '#{filename}'")      
+      @log.done!("\nGenerated waveform '#{filename}'")      
     end
     
     private
@@ -177,10 +182,6 @@ class Waveform
       # negative amplitude
       height = options[:height]
       zero = height / 2.0
-
-      if options[:print_data]
-        file = File.open(options[:data_file], 'w')
-      end
     
       samples.each_with_index do |sample, x|
         # Half the amplitude goes above zero, half below
@@ -193,11 +194,7 @@ class Waveform
         if options[:print_seconds] && ((x + 1) % samples_per_second) == 0
           image.line(x, 0, x, height.round, sec_color)
         end
-
-        file.write "#{sample}\n" if options[:print_data]
       end
-
-      file.close
       
       # Simple transparency masking, it just loops over every pixel and makes
       # ones which match the transparency mask color completely clear.
@@ -210,6 +207,13 @@ class Waveform
       end
       
       image
+    end
+    
+    # print sample into a file
+    def print_data(samples)
+      File.open(@options[:data_file], 'w') do |file|
+        file.write samples.join("\n")
+      end
     end
   
     # Returns an array of the peak of each channel for the given collection of

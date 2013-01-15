@@ -58,7 +58,7 @@ optparse = OptionParser.new do |o|
 
   options[:print_data] = false
   options[:data_file] = false
-  o.on("-p", "--print-data DATA", "Print values used to draw into a file.") do |datafile|
+  o.on("-p", "--print-data FILE", "Print values used to draw into a file.") do |datafile|
     options[:print_data] = true
     options[:data_file] = datafile
   end
