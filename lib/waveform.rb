@@ -127,15 +127,18 @@ class Waveform
       raise ArgumentError.new("Unknown sampling method #{method}") unless [ :peak, :rms ].include?(method)
       
       frames = []
-      frames_per_second = 0.0
+      samples_per_second = 0.0
 
       RubyAudio::Sound.open(source) do |audio|
         frames_read = 0
         frames_per_sample = (audio.info.frames.to_f / width.to_f)
-        frames_per_second = (@options[:time] * audio.info.samplerate.to_f / frames_per_sample).to_i
+        samples_per_second = (@options[:time] * audio.info.samplerate.to_f / frames_per_sample).to_i
         frames_per_sample = frames_per_sample.to_i
         sample = RubyAudio::Buffer.new("float", frames_per_sample, audio.info.channels)
 
+        # display some important info
+        @log.out("Frames per sample: %d\n" % frames_per_sample)
+        @log.out("Samples per time frame: %d\n" % samples_per_second) if @options[:print_seconds]
         @log.timed("Sampling #{frames_per_sample} frames per sample: ") do
           while(frames_read = audio.read(sample)) > 0
             frames << send(method, sample, audio.info.channels)
@@ -144,7 +147,7 @@ class Waveform
         end
       end
       
-      return frames, frames_per_second
+      return frames, samples_per_second
     rescue RubyAudio::Error => e
       raise e unless e.message == "File contains data in an unknown format."
       raise Waveform::RuntimeError.new("Source audio file #{source} could not be read by RubyAudio library -- Hint: non-WAV files are no longer supported, convert to WAV first using something like ffmpeg (RubyAudio: #{e.message})")
